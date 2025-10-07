@@ -6,12 +6,12 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Contact Us", href: "#contact" },
+    { name: "Contact Us", href: "/auth/login" },
     { name: "Help", href: "#help" },
     { name: "Support Forum", href: "#support" },
     { name: "Blog", href: "#blog" },
-    { name: "Log In", href: "#login" },
-    { name: "Sign Up", href: "#signup" },
+    { name: "Log In", href: "/auth/login" },
+    { name: "Sign Up", href: "/auth/register" },
   ];
 
   return (
