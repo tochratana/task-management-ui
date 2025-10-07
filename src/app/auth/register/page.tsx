@@ -2,10 +2,13 @@
 import { useState } from "react";
 import { useRegisterMutation, useLoginMutation } from "@/store/api/authApi";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/store/slices/authSlice";
 import { Mail, User, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function AuthPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [register, { isLoading: isRegistering }] = useRegisterMutation();
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
   const [isLogin, setIsLogin] = useState(false);
@@ -29,8 +32,19 @@ export default function AuthPage() {
           email: form.email,
           password: form.password,
         }).unwrap();
+
         console.log("Login Success:", result);
+
+        // Store token and user data
+        dispatch(
+          setCredentials({
+            token: result.token,
+            user: result.user,
+          })
+        );
+
         // Redirect to dashboard
+        router.push("/dashboard");
       } else {
         // Register
         const result = await register({
@@ -38,8 +52,19 @@ export default function AuthPage() {
           email: form.email,
           password: form.password,
         }).unwrap();
+
         console.log("Register Success:", result);
-        // Redirect to dashboard or login
+
+        // Store token and user data
+        dispatch(
+          setCredentials({
+            token: result.token,
+            user: result.user,
+          })
+        );
+
+        // Redirect to dashboard
+        router.push("/dashboard");
       }
     } catch (error: any) {
       console.error("Error:", error);
@@ -217,11 +242,7 @@ export default function AuthPage() {
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isLoading
-                  ? "Loading..."
-                  : isLogin
-                  ? "Log in"
-                  : "Sign up"}
+                {isLoading ? "Loading..." : isLogin ? "Log in" : "Sign up"}
               </button>
             </form>
 
@@ -237,11 +258,7 @@ export default function AuthPage() {
               type="button"
               className="w-full bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
             >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12.5 2C6.7 2 2 6.7 2 12.5S6.7 23 12.5 23 23 18.3 23 12.5 18.3 2 12.5 2zm0 19.8c-5.2 0-9.5-4.3-9.5-9.5S7.3 3 12.5 3s9.5 4.3 9.5 9.5-4.3 9.5-9.5 9.5z" />
               </svg>
               <span>Continue with WordPress.com</span>
