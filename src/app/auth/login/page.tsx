@@ -4,7 +4,7 @@ import { useLoginMutation } from "@/store/api/authApi";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/store/slices/authSlice";
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
 
 const Login: React.FC = () => {
   const router = useRouter();
@@ -22,7 +22,6 @@ const Login: React.FC = () => {
     setErrors({});
 
     try {
-      // Login API call
       const result = await login({
         email: formData.email,
         password: formData.password,
@@ -30,7 +29,6 @@ const Login: React.FC = () => {
 
       console.log("Login Success:", result);
 
-      // Store token and user data in Redux
       dispatch(
         setCredentials({
           token: result.token,
@@ -38,21 +36,36 @@ const Login: React.FC = () => {
         })
       );
 
-      // Redirect to dashboard
       router.push("/dashboard");
     } catch (error: unknown) {
-      if (error && typeof error === "object" && "data" in error) {
-        const err = error as {
-          data?: { errors?: Record<string, string>; message?: string };
-        };
-        if (err.data?.errors) {
-          setErrors(err.data.errors);
-          console.error("Validation errors:", err.data.errors);
-        } else if (err.data?.message) {
-          setErrors({ general: err.data.message });
-        }
+      console.error("Login Error:", error);
+      const err = error as {
+        status?: string | number;
+        data?: { errors?: Record<string, string>; message?: string };
+      };
+
+      // Handle different error types
+      if (err.status === "FETCH_ERROR") {
+        setErrors({
+          general:
+            "Cannot connect to server. Please check your internet connection or try again later. The server may be starting up (this can take 30-60 seconds on first request).",
+        });
+      } else if (err.status === "PARSING_ERROR") {
+        setErrors({
+          general: "Server returned invalid response. Please try again.",
+        });
+      } else if (err.status === 401) {
+        setErrors({
+          general: "Invalid email or password. Please try again.",
+        });
+      } else if (err.data?.errors) {
+        setErrors(err.data.errors);
+      } else if (err.data?.message) {
+        setErrors({ general: err.data.message });
       } else {
-        console.error("Unexpected error:", error);
+        setErrors({
+          general: "An unexpected error occurred. Please try again.",
+        });
       }
     }
   };
@@ -62,12 +75,15 @@ const Login: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear errors when user starts typing
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: "" });
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        {/* Back Button */}
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
@@ -76,7 +92,6 @@ const Login: React.FC = () => {
           <span>Back</span>
         </button>
 
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
             <svg
@@ -89,10 +104,8 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Form Container */}
         <div className="bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
           <div className="p-8">
-            {/* Title */}
             <h2 className="text-3xl font-bold text-white text-center mb-2">
               Log in
             </h2>
@@ -100,18 +113,14 @@ const Login: React.FC = () => {
               Welcome back! Please enter your details.
             </p>
 
-            {/* General Error Message */}
             {errors.general && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-                <p className="text-red-400 text-sm text-center">
-                  {errors.general}
-                </p>
+              <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-red-400 text-sm">{errors.general}</p>
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email Field */}
               <div>
                 <label
                   htmlFor="email"
@@ -130,6 +139,7 @@ const Login: React.FC = () => {
                     placeholder="Enter your email"
                     className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg pl-11 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 {errors.email && (
@@ -137,7 +147,6 @@ const Login: React.FC = () => {
                 )}
               </div>
 
-              {/* Password Field */}
               <div>
                 <label
                   htmlFor="password"
@@ -156,11 +165,13 @@ const Login: React.FC = () => {
                     placeholder="Enter your password"
                     className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg pl-11 pr-12 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5" />
@@ -174,7 +185,6 @@ const Login: React.FC = () => {
                 )}
               </div>
 
-              {/* Forgot Password */}
               <div className="flex justify-end">
                 <a
                   href="#"
@@ -184,27 +194,47 @@ const Login: React.FC = () => {
                 </a>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isLoading ? "Loading..." : "Log in"}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Connecting...
+                  </span>
+                ) : (
+                  "Log in"
+                )}
               </button>
             </form>
 
-            {/* Divider */}
             <div className="flex items-center my-6">
               <div className="flex-1 border-t border-gray-700"></div>
               <span className="px-4 text-gray-500 text-sm">or</span>
               <div className="flex-1 border-t border-gray-700"></div>
             </div>
 
-            {/* Social Login */}
             <button
               type="button"
               className="w-full bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+              disabled={isLoading}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12.5 2C6.7 2 2 6.7 2 12.5S6.7 23 12.5 23 23 18.3 23 12.5 18.3 2 12.5 2zm0 19.8c-5.2 0-9.5-4.3-9.5-9.5S7.3 3 12.5 3s9.5 4.3 9.5 9.5-4.3 9.5-9.5 9.5z" />
@@ -213,10 +243,9 @@ const Login: React.FC = () => {
             </button>
           </div>
 
-          {/* Sign up Link */}
           <div className="bg-gray-750 px-8 py-4 border-t border-gray-700">
             <p className="text-center text-gray-400 text-sm">
-              {"Don't have an account?"}
+              Don&apos;t have an account?{" "}
               <button
                 onClick={() => router.push("/register")}
                 className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
@@ -227,7 +256,6 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Additional Info */}
         <p className="text-center text-gray-500 text-xs mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
