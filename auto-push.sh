@@ -7,7 +7,7 @@ set -e
 DATE=$(date +"%Y-%m-%d %H:%M:%S")
 
 # Use a default commit message if none is provided
-MESSAGE=${1:-"Auto commit on $DATE"}
+MESSAGE=${1:-"Commit on $DATE"}
 
 # Show what the script is doing
 echo "🌀 Adding changes..."
