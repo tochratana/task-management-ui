@@ -1,7 +1,7 @@
 {
   "id": "next-pwa-app",
-  "name": "Next.js PWA",
-  "short_name": "NextPWA",
+  "name": "Tasky Note",
+  "short_name": "TaskyNote",
   "description": "A Progressive Web App built with Next.js",
   "start_url": "/",
   "scope": "/",
