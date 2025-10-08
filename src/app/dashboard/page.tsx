@@ -9,6 +9,7 @@ import {
   useDeleteTaskMutation,
   useGetTasksQuery,
 } from "@/store/api/taskApi";
+import { RootState } from "@/store";
 
 export default function DashboardPage() {
   const router = useRouter();

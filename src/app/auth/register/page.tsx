@@ -66,11 +66,19 @@ export default function AuthPage() {
         // Redirect to dashboard
         router.push("/dashboard");
       }
-    } catch (error: any) {
-      console.error("Error:", error);
-      if (error.data?.errors) {
-        setErrors(error.data.errors);
-        console.error("Validation errors:", error.data.errors);
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "data" in error) {
+        const err = error as {
+          data?: { errors?: Record<string, string>; message?: string };
+        };
+        if (err.data?.errors) {
+          setErrors(err.data.errors);
+          console.error("Validation errors:", err.data.errors);
+        } else if (err.data?.message) {
+          setErrors({ general: err.data.message });
+        }
+      } else {
+        console.error("Unexpected error:", error);
       }
     }
   };
